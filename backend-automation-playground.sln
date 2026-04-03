@@ -1,0 +1,24 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.5.2.0
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "scan-api", "scan-api\scan-api.csproj", "{77400C81-8BAB-F773-A8FB-44EAF9D1EF1C}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{77400C81-8BAB-F773-A8FB-44EAF9D1EF1C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{77400C81-8BAB-F773-A8FB-44EAF9D1EF1C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{77400C81-8BAB-F773-A8FB-44EAF9D1EF1C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{77400C81-8BAB-F773-A8FB-44EAF9D1EF1C}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {D745F1EE-C1F3-4B55-99D8-7DF207EA0768}
+	EndGlobalSection
+EndGlobal
