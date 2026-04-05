@@ -2,7 +2,7 @@ namespace scan_api.Models
 {
     public class Scan
     {
-        public string Id { get; set; } = Guid.NewGuid().ToString();
+        public string Id { get; set; } = Guid.NewGuid().ToString("N").Substring(0, 5);
         public string DocumentId { get; set; } = string.Empty;
         public string Text { get; set; } = string.Empty;
         public string CallbackUrl { get; set; } = string.Empty;
