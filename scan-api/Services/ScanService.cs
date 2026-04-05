@@ -56,5 +56,18 @@ namespace scan_api.Services
             var safeWord = Regex.Escape(word);
             return Regex.IsMatch(scan.Text, $@"\b{safeWord}\b", RegexOptions.IgnoreCase);
         }
+
+        public bool UpdateStatus(string id, string status, string? errorMessage = null)
+        {
+            var scan = GetById(id);
+            if (scan == null)
+            {
+                return false;
+            }
+
+            scan.Status = status;
+            scan.UpdatedAt = DateTime.UtcNow;
+            return true;
+        }
     }
 }
