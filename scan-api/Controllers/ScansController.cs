@@ -1,5 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using scan_api.Models;
+using System.Text.RegularExpressions;
 
 namespace scan_api.Controllers
 {
@@ -46,6 +47,22 @@ namespace scan_api.Controllers
                 return NotFound();
             }
             return Ok(scan);
+        }
+        [HttpGet("{Id}/{Text}")]
+        public IActionResult ScansText(string Id, string Text)
+        {
+            var scan = Scans.Find(x => x.Id == Id);
+            if (scan == null)
+            {
+                return NotFound();
+            }
+            bool areFound = Regex.IsMatch(scan.Text, $@"\b{Text}\b", RegexOptions.IgnoreCase);
+            return Ok(new
+                {
+                    word = Text,
+                    found = areFound
+                }
+            );
         }
     }
 }
