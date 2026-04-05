@@ -1,4 +1,5 @@
 using scan_api.Services;
+using scan_api.BackgroundServices;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -8,6 +9,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ScanService>();
+builder.Services.AddSingleton<ScanQueueService>();
+builder.Services.AddHostedService<ScanProcessingWorker>();
 
 var app = builder.Build();
 

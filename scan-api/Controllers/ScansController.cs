@@ -9,16 +9,20 @@ namespace scan_api.Controllers
     public class ScansController : ControllerBase
     {
         private readonly ScanService _scanService;
+        private readonly ScanQueueService _queue;
 
-        public ScansController(ScanService scanService)
+        public ScansController(ScanService scanService, ScanQueueService queue)
         {
             _scanService = scanService;
+            _queue = queue;
         }
 
         [HttpPost]
         public IActionResult Create([FromBody] CreateScanRequest request)
         {
             var scan = _scanService.Create(request);
+            
+            _queue.Enqueue(new ScanMessage { ScanId = scan.Id });
 
             return Accepted(new
             {
