@@ -1,6 +1,6 @@
 using Microsoft.AspNetCore.Mvc;
 using scan_api.Models;
-using System.Text.RegularExpressions;
+using scan_api.Services;
 
 namespace scan_api.Controllers
 {
@@ -8,22 +8,17 @@ namespace scan_api.Controllers
     [Route("scans")]
     public class ScansController : ControllerBase
     {
-        private static readonly List<Scan> Scans = new();
+        private readonly ScanService _scanService;
+
+        public ScansController(ScanService scanService)
+        {
+            _scanService = scanService;
+        }
 
         [HttpPost]
         public IActionResult Create([FromBody] CreateScanRequest request)
         {
-            var scan = new Scan
-            {
-                DocumentId = request.DocumentId,
-                Text = request.Text,
-                CallbackUrl = request.CallbackUrl,
-                Status = "PENDING",
-                CreatedAt = DateTime.UtcNow,
-                UpdatedAt = DateTime.UtcNow
-            };
-
-            Scans.Add(scan);
+            var scan = _scanService.Create(request);
 
             return Accepted(new
             {
@@ -35,34 +30,40 @@ namespace scan_api.Controllers
         [HttpGet]
         public IActionResult GetAll()
         {
-            return Ok(Scans);
+            return Ok(_scanService.GetAll());
         }
 
-        [HttpGet("{Id}")]
-        public IActionResult GetScans(string Id)
+        [HttpGet("{id}")]
+        public IActionResult GetById(string id)
         {
-            var scan = Scans.Find(x => x.Id == Id);
+            var scan = _scanService.GetById(id);
+
             if (scan == null)
             {
                 return NotFound();
             }
+
             return Ok(scan);
         }
-        [HttpGet("{Id}/{Text}")]
-        public IActionResult ScansText(string Id, string Text)
+
+        [HttpGet("{id}/{text}")]
+        public IActionResult ScansText(string id, string text)
         {
-            var scan = Scans.Find(x => x.Id == Id);
+            var scan = _scanService.GetById(id);
+
             if (scan == null)
             {
                 return NotFound();
             }
-            bool areFound = Regex.IsMatch(scan.Text, $@"\b{Text}\b", RegexOptions.IgnoreCase);
+
+            bool areFound = _scanService.ContainsWord(id, text);
+
             return Ok(new
-                {
-                    word = Text,
-                    found = areFound
-                }
-            );
+            {
+                scanId = id,
+                word = text,
+                found = areFound
+            });
         }
     }
 }
