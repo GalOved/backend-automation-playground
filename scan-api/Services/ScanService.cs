@@ -5,12 +5,25 @@ namespace scan_api.Services
 {
     public class ScanService
     {
-        private readonly List<Scan> _scans = new();
+        private readonly Dictionary<string, Scan> _scans = new();
 
+        private string GenerateUniqueId()
+        {
+            string id;
+
+            do
+            {
+                id = Guid.NewGuid().ToString("N").Substring(0, 5);
+            }
+            while (_scans.ContainsKey(id));
+
+            return id;
+        }
         public Scan Create(CreateScanRequest request)
         {
             var scan = new Scan
             {
+                Id = GenerateUniqueId(),
                 DocumentId = request.DocumentId,
                 Text = request.Text,
                 CallbackUrl = request.CallbackUrl,
@@ -19,23 +32,24 @@ namespace scan_api.Services
                 UpdatedAt = DateTime.UtcNow
             };
 
-            _scans.Add(scan);
+            _scans[scan.Id] = scan;
             return scan;
         }
 
         public List<Scan> GetAll()
         {
-            return _scans;
+            return _scans.Values.ToList();
         }
 
         public Scan? GetById(string id)
         {
-            return _scans.Find(x => x.Id == id);
+            _scans.TryGetValue(id, out var scan);
+            return scan;
         }
 
         public bool ContainsWord(string id, string word)
         {
-            var scan = _scans.Find(x => x.Id == id);
+            var scan = GetById(id);
             if (scan == null) {
                 return false;
             }
