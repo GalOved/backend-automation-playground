@@ -7,18 +7,22 @@ namespace scan_api.Services
     {
         private readonly Dictionary<string, Scan> _scans = new();
 
+        /// <summary>
+        /// Generates a unique 5-character scan ID.
+        /// </summary>
         private string GenerateUniqueId()
         {
             string id;
-
             do
             {
                 id = Guid.NewGuid().ToString("N").Substring(0, 5);
             }
             while (_scans.ContainsKey(id));
-
             return id;
         }
+        /// <summary>
+        /// Creates a new scan and adds it to the dictionary.
+        /// </summary>
         public Scan Create(CreateScanRequest request)
         {
             var scan = new Scan
@@ -36,18 +40,27 @@ namespace scan_api.Services
             return scan;
         }
 
+        /// <summary>
+        /// Returns a list of all scans.
+        /// </summary>
         public List<Scan> GetAll()
         {
             return _scans.Values.ToList();
         }
 
+        /// <summary>
+        /// Retrieves a scan by its ID.
+        /// </summary>
         public Scan? GetById(string id)
         {
             _scans.TryGetValue(id, out var scan);
             return scan;
         }
 
-        public bool ContainsWord(string id, string word)
+        /// <summary>
+        /// Checks if the scan text contains the given word (case-insensitive, word boundary).
+        /// </summary>
+        public bool ContainsWordInText(string id, string word)
         {
             var scan = GetById(id);
             if (scan == null) {
@@ -57,6 +70,9 @@ namespace scan_api.Services
             return Regex.IsMatch(scan.Text, $@"\b{safeWord}\b", RegexOptions.IgnoreCase);
         }
 
+        /// <summary>
+        /// Updates the status of a scan by ID.
+        /// </summary>
         public bool UpdateStatus(string id, string status, string? errorMessage = null)
         {
             var scan = GetById(id);
@@ -67,7 +83,20 @@ namespace scan_api.Services
 
             scan.Status = status;
             scan.UpdatedAt = DateTime.UtcNow;
+            scan.ErrorMessage = status == "FAILED" ? errorMessage : null;
             return true;
+        }
+
+        /// <summary>
+        /// Checks if the DocumentId contains the given word (case-insensitive, word boundary).
+        /// </summary>
+        public bool ContainsWordInDocumentId(string id, string word)
+        {
+            var scan = GetById(id);
+            if (scan == null) {
+                return false;
+            }
+            return scan.DocumentId.StartsWith(word, StringComparison.OrdinalIgnoreCase);       
         }
     }
 }
