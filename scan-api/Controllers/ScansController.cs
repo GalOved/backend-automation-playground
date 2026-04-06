@@ -60,7 +60,7 @@ namespace scan_api.Controllers
                 return NotFound();
             }
 
-            bool areFound = _scanService.ContainsWord(id, text);
+            bool areFound = _scanService.ContainsWordInText(id, text);
 
             return Ok(new
             {
