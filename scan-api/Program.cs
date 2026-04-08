@@ -11,6 +11,7 @@ builder.Services.AddSwaggerGen();
 builder.Services.AddSingleton<ScanService>();
 builder.Services.AddSingleton<ScanQueueService>();
 builder.Services.AddHostedService<ScanProcessingWorker>();
+builder.Services.AddSingleton<RabbitMqPublisher>();
 
 var app = builder.Build();
 

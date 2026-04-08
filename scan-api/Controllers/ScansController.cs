@@ -9,12 +9,12 @@ namespace scan_api.Controllers
     public class ScansController : ControllerBase
     {
         private readonly ScanService _scanService;
-        private readonly ScanQueueService _queue;
+        private readonly RabbitMqPublisher _publisher;
 
-        public ScansController(ScanService scanService, ScanQueueService queue)
+        public ScansController(ScanService scanService, RabbitMqPublisher publisher)
         {
             _scanService = scanService;
-            _queue = queue;
+            _publisher = publisher;
         }
 
         [HttpPost]
@@ -22,7 +22,7 @@ namespace scan_api.Controllers
         {
             var scan = _scanService.Create(request);
             
-            _queue.Enqueue(new ScanMessage { ScanId = scan.Id });
+            _publisher.Publish(new ScanMessage { ScanId = scan.Id });
 
             return Accepted(new
             {

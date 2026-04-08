@@ -1,4 +1,8 @@
+using System.Text;
+using System.Text.Json;
 using Microsoft.Extensions.Hosting;
+using RabbitMQ.Client;
+using RabbitMQ.Client.Events;
 using scan_api.Models;
 using scan_api.Services;
 
@@ -6,56 +10,113 @@ namespace scan_api.BackgroundServices
 {
     public class ScanProcessingWorker : BackgroundService
     {
-        private readonly ScanQueueService _queue;
         private readonly ScanService _scanService;
-        private const string FAIL = "fail";
-        private const string BAD = "bad-";
+        private readonly IConfiguration _configuration;
 
-        public ScanProcessingWorker(ScanQueueService queue, ScanService scanService)
+        private IConnection? _connection;
+        private IChannel? _channel;
+        private string _queueName = "scan-queue";
+
+        public ScanProcessingWorker(ScanService scanService, IConfiguration configuration)
         {
-            _queue = queue;
             _scanService = scanService;
+            _configuration = configuration;
         }
 
-        protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+        public override async Task StartAsync(CancellationToken cancellationToken)
         {
-            Console.WriteLine("ScanProcessingWorker started.");
+            var hostName = _configuration["RabbitMq:HostName"] ?? "localhost";
+            var userName = _configuration["RabbitMq:UserName"] ?? "guest";
+            var password = _configuration["RabbitMq:Password"] ?? "guest";
+            _queueName = _configuration["RabbitMq:QueueName"] ?? "scan-queue";
 
-            while (!stoppingToken.IsCancellationRequested)
+            var factory = new ConnectionFactory
+            {
+                HostName = hostName,
+                UserName = userName,
+                Password = password
+            };
+
+            _connection = await factory.CreateConnectionAsync(cancellationToken);
+            _channel = await _connection.CreateChannelAsync(cancellationToken: cancellationToken);
+
+            await _channel.QueueDeclareAsync(
+                queue: _queueName,
+                durable: false,
+                exclusive: false,
+                autoDelete: false,
+                arguments: null,
+                cancellationToken: cancellationToken
+            );
+
+            await base.StartAsync(cancellationToken);
+        }
+
+        protected override Task ExecuteAsync(CancellationToken stoppingToken)
+        {
+            Console.WriteLine("RabbitMQ ScanProcessingWorker started.");
+
+            var consumer = new AsyncEventingBasicConsumer(_channel!);
+
+            consumer.ReceivedAsync += async (sender, ea) =>
             {
                 ScanMessage? message = null;
+
                 try
                 {
-                    if (_queue.TryDequeue(out message) && message != null)
+                    var body = ea.Body.ToArray();
+                    var json = Encoding.UTF8.GetString(body);
+                    message = JsonSerializer.Deserialize<ScanMessage>(json);
+
+                    if (message == null)
                     {
-                        Console.WriteLine($"Started processing scan {message.ScanId}");
-                        _scanService.UpdateStatus(message.ScanId, "PROCESSING");
-                        var containsFail = _scanService.ContainsWordInText(message.ScanId, FAIL);
-                        var containsBadInDocumentId = _scanService.ContainsWordInDocumentId(message.ScanId, BAD);
-                        await Task.Delay(5_000, stoppingToken);
-                        if (containsFail || containsBadInDocumentId)
-                        {
-                            _scanService.UpdateStatus(message.ScanId, "FAILED", "Scan processing failed.");
-                            Console.WriteLine($"Failed processing scan {message.ScanId}");
-                            continue;
-                        }
-                        _scanService.UpdateStatus(message.ScanId, "COMPLETED");
-                        Console.WriteLine($"Completed processing scan {message.ScanId}");
+                        return;
                     }
-                    else
+
+                    Console.WriteLine($"Started processing scan {message.ScanId}");
+                    _scanService.UpdateStatus(message.ScanId, "PROCESSING");
+
+                    var containsFail = _scanService.ContainsWordInText(message.ScanId, "fail");
+                    var hasBadDocumentId = _scanService.ContainsWordInDocumentId(message.ScanId, "bad-");
+
+                    await Task.Delay(10_000, stoppingToken);
+
+                    if (containsFail || hasBadDocumentId)
                     {
-                        await Task.Delay(500, stoppingToken);
+                        _scanService.UpdateStatus(message.ScanId, "FAILED", "Scan processing failed.");
+                        Console.WriteLine($"Scan {message.ScanId} marked as FAILED");
+                        return;
                     }
+
+                    _scanService.UpdateStatus(message.ScanId, "COMPLETED");
+                    Console.WriteLine($"Completed processing scan {message.ScanId}");
                 }
                 catch (Exception ex)
                 {
-                    Console.WriteLine($"Error processing scan: {ex.Message}\n{ex.StackTrace}");
+                    Console.WriteLine($"Error processing scan: {ex.Message}");
+
                     if (message != null)
                     {
                         _scanService.UpdateStatus(message.ScanId, "FAILED", ex.Message);
                     }
                 }
-            }
+            };
+
+            _channel!.BasicConsumeAsync(
+                queue: _queueName,
+                autoAck: true,
+                consumer: consumer,
+                cancellationToken: stoppingToken
+            );
+
+            return Task.CompletedTask;
+        }
+
+        public override void Dispose()
+        {
+            _channel?.Dispose();
+            _connection?.Dispose();
+            base.Dispose();
         }
     }
 }
