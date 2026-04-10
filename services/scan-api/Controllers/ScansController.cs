@@ -20,6 +20,11 @@ namespace scan_api.Controllers
         [HttpPost]
         public IActionResult Create([FromBody] CreateScanRequest request)
         {
+            if (_scanService.DocumentIdExists(request.DocumentId))
+            {
+                return Conflict(new { error = $"A scan with documentId '{request.DocumentId}' already exists." });
+            }
+
             var scan = _scanService.Create(request);
             
             _publisher.Publish(new ScanMessage { ScanId = scan.Id });

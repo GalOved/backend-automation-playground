@@ -10,13 +10,18 @@ namespace scan_api.Services
         private readonly IConnection _connection;
         private readonly IChannel _channel;
         private readonly string _queueName;
+        private readonly ILogger<RabbitMqPublisher> _logger;
 
-        public RabbitMqPublisher(IConfiguration configuration)
+        public RabbitMqPublisher(IConfiguration configuration, ILogger<RabbitMqPublisher> logger)
         {
+            _logger = logger;
+
             var hostName = configuration["RabbitMq:HostName"] ?? "localhost";
             var userName = configuration["RabbitMq:UserName"] ?? "guest";
             var password = configuration["RabbitMq:Password"] ?? "guest";
             _queueName = configuration["RabbitMq:QueueName"] ?? "scan-queue";
+
+            _logger.LogInformation("Connecting to RabbitMQ at {HostName}, queue: {QueueName}", hostName, _queueName);
 
             var factory = new ConnectionFactory
             {
@@ -35,10 +40,14 @@ namespace scan_api.Services
                 autoDelete: false,
                 arguments: null
             ).GetAwaiter().GetResult();
+
+            _logger.LogInformation("RabbitMQ publisher ready on queue: {QueueName}", _queueName);
         }
 
         public void Publish(ScanMessage message)
         {
+            _logger.LogInformation("Publishing scan message for ScanId: {ScanId}", message.ScanId);
+
             var json = JsonSerializer.Serialize(message);
             var body = Encoding.UTF8.GetBytes(json);
 
@@ -47,6 +56,8 @@ namespace scan_api.Services
                 routingKey: _queueName,
                 body: body
             ).GetAwaiter().GetResult();
+
+            _logger.LogInformation("Successfully published scan message for ScanId: {ScanId}", message.ScanId);
         }
 
         public void Dispose()
