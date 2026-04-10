@@ -21,6 +21,14 @@ namespace scan_api.Services
             return id;
         }
         /// <summary>
+        /// Returns true if a scan with the given documentId already exists.
+        /// </summary>
+        public bool DocumentIdExists(string documentId)
+        {
+            return _scans.Values.Any(s => s.DocumentId == documentId);
+        }
+
+        /// <summary>
         /// Creates a new scan and adds it to the dictionary.
         /// </summary>
         public Scan Create(CreateScanRequest request)
