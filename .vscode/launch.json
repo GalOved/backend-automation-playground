@@ -1,0 +1,66 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "pytest: all tests",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "pytest: async flow",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["test_async_flow.py", "-v"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "pytest: scans api",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["test_scans_api.py", "-v"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "pytest: validation",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["test_validation.py", "-v"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "pytest: webhooks",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["test_webhooks.py", "-v"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    },
+    {
+      "name": "pytest: single test",
+      "type": "debugpy",
+      "request": "launch",
+      "module": "pytest",
+      "args": ["-v", "-k", "${input:testName}"],
+      "cwd": "${workspaceFolder}/tests/python-api-tests",
+      "console": "integratedTerminal"
+    }
+  ],
+  "inputs": [
+    {
+      "id": "testName",
+      "type": "promptString",
+      "description": "Test function name (e.g. test_health_check)"
+    }
+  ]
+}
