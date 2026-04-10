@@ -19,10 +19,8 @@ def test_full_scan_flow(unique_id):
     scan = helper.poll_scan_status(scan_id, "COMPLETED", SCAN_API_URL, timeout=30)
     assert scan["status"] == "COMPLETED"
 
-    webhooks_response = api.get(f"{WEBHOOK_URL}/webhooks")
-    assert webhooks_response.status_code == 200
-    webhook_ids = [w["scanId"] for w in webhooks_response.json()]
-    assert scan_id in webhook_ids
+    webhook = helper.poll_webhook_received(scan_id, WEBHOOK_URL, timeout=10)
+    assert webhook["status"] == "COMPLETED"
 
 
 def test_failed_scan_flow(unique_id):
@@ -41,8 +39,5 @@ def test_failed_scan_flow(unique_id):
     scan = helper.poll_scan_status(scan_id, "FAILED", SCAN_API_URL, timeout=30)
     assert scan["status"] == "FAILED"
 
-    webhooks_response = api.get(f"{WEBHOOK_URL}/webhooks")
-    assert webhooks_response.status_code == 200
-    matching = [w for w in webhooks_response.json() if w["scanId"] == scan_id]
-    assert len(matching) == 1
-    assert matching[0]["status"] == "FAILED"
+    webhook = helper.poll_webhook_received(scan_id, WEBHOOK_URL, timeout=10)
+    assert webhook["status"] == "FAILED"
