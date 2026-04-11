@@ -10,5 +10,6 @@ namespace scan_api.Models
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
         public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
         public string? ErrorMessage { get; set; }
+        public string? ContentHash { get; set; }
     }
 }
