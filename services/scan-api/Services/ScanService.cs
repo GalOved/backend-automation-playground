@@ -1,11 +1,12 @@
 using scan_api.Models;
+using System.Collections.Concurrent;
 using System.Text.RegularExpressions;
 
 namespace scan_api.Services
 {
     public class ScanService
     {
-        private readonly Dictionary<string, Scan> _scans = new();
+        private readonly ConcurrentDictionary<string, Scan> _scans = new();
 
         /// <summary>
         /// Generates a unique 5-character scan ID.
@@ -81,7 +82,7 @@ namespace scan_api.Services
         /// <summary>
         /// Updates the status of a scan by ID.
         /// </summary>
-        public bool UpdateStatus(string id, string status, string? errorMessage = null)
+        public bool UpdateStatus(string id, string status, string? errorMessage = null, string? contentHash = null)
         {
             var scan = GetById(id);
             if (scan == null)
@@ -92,6 +93,8 @@ namespace scan_api.Services
             scan.Status = status;
             scan.UpdatedAt = DateTime.UtcNow;
             scan.ErrorMessage = status == "FAILED" ? errorMessage : null;
+            if (contentHash != null)
+                scan.ContentHash = contentHash;
             return true;
         }
 

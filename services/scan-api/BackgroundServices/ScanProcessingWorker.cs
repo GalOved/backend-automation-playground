@@ -1,3 +1,4 @@
+using System.Security.Cryptography;
 using System.Text;
 using System.Text.Json;
 using Microsoft.Extensions.Hosting;
@@ -88,7 +89,15 @@ namespace scan_api.BackgroundServices
                     var containsFail = _scanService.ContainsWordInText(message.ScanId, "fail");
                     var hasBadDocumentId = _scanService.ContainsWordInDocumentId(message.ScanId, "bad-");
 
-                    await Task.Delay(10_000, stoppingToken);
+                    var scan = _scanService.GetById(message.ScanId);
+                    var input = $"{message.ScanId}:{scan?.Text}";
+                    var contentHash = await Task.Run(() =>
+                    {
+                        var data = Encoding.UTF8.GetBytes(input);
+                        for (int i = 0; i < 5_000; i++)
+                            data = SHA256.HashData(data);
+                        return Convert.ToHexString(data).ToLowerInvariant();
+                    }, stoppingToken);
 
                     if (containsFail || hasBadDocumentId)
                     {
@@ -98,7 +107,7 @@ namespace scan_api.BackgroundServices
                         return;
                     }
 
-                    _scanService.UpdateStatus(message.ScanId, "COMPLETED");
+                    _scanService.UpdateStatus(message.ScanId, "COMPLETED", contentHash: contentHash);
                     _logger.LogInformation("Scan {ScanId} completed successfully", message.ScanId);
                     await SendWebhookAsync(message.ScanId, "COMPLETED", null, stoppingToken);
                 }
